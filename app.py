@@ -256,6 +256,10 @@ async def handle_forwarded_message(update: Update, context):
 def telegram_webhook():
     """Обробляє webhook від Telegram"""
     try:
+        if bot_application is None:
+            logger.error("Bot application not initialized")
+            return jsonify({'error': 'Bot not ready'}), 503
+            
         update = Update.de_json(request.json, bot_application.bot)
         
         # Запускаємо обробку в новому event loop
@@ -300,3 +304,6 @@ if __name__ == '__main__':
     init_bot()
     port = int(os.environ.get('PORT', 10000))
     app.run(host='0.0.0.0', port=port)
+else:
+    # Для production (gunicorn)
+    init_bot()
