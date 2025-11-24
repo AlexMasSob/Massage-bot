@@ -6,10 +6,7 @@ from flask import Flask, request, jsonify
 from telegram import Bot, Update
 from telegram.ext import Updater, CommandHandler, MessageHandler, Filters, CallbackContext
 
-logging.basicConfig(
-format=’%(asctime)s - %(name)s - %(levelname)s - %(message)s’,
-level=logging.INFO
-)
+logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(**name**)
 
 TELEGRAM_BOT_TOKEN = os.environ.get(‘TELEGRAM_BOT_TOKEN’, ‘YOUR_TOKEN’)
@@ -57,84 +54,38 @@ return calculated_signature == signature
 
 def send_course_videos(chat_id):
 try:
-bot.send_message(
-chat_id=chat_id,
-text=“Vitayu! Dyakuyu za pokupku kursu!\n\nZaraz ty otrymayesh vsi video uroky.”
-)
+bot.send_message(chat_id=chat_id, text=“Vitayu! Dyakuyu za pokupku kursu!”)
 
 ```
     bot.send_message(chat_id=chat_id, text="Vstupne video:")
-    bot.forward_message(
-        chat_id=chat_id,
-        from_chat_id=CHANNEL_ID,
-        message_id=VIDEO_MESSAGE_IDS['intro'],
-        protect_content=True
-    )
+    bot.forward_message(chat_id=chat_id, from_chat_id=CHANNEL_ID, message_id=VIDEO_MESSAGE_IDS['intro'], protect_content=True)
     
     bot.send_message(chat_id=chat_id, text="Urok 1: Nogy")
-    bot.forward_message(
-        chat_id=chat_id,
-        from_chat_id=CHANNEL_ID,
-        message_id=VIDEO_MESSAGE_IDS['lesson1_video1'],
-        protect_content=True
-    )
-    bot.forward_message(
-        chat_id=chat_id,
-        from_chat_id=CHANNEL_ID,
-        message_id=VIDEO_MESSAGE_IDS['lesson1_video2'],
-        protect_content=True
-    )
+    bot.forward_message(chat_id=chat_id, from_chat_id=CHANNEL_ID, message_id=VIDEO_MESSAGE_IDS['lesson1_video1'], protect_content=True)
+    bot.forward_message(chat_id=chat_id, from_chat_id=CHANNEL_ID, message_id=VIDEO_MESSAGE_IDS['lesson1_video2'], protect_content=True)
     
     bot.send_message(chat_id=chat_id, text="Urok 2: Sidnytsi")
-    bot.forward_message(
-        chat_id=chat_id,
-        from_chat_id=CHANNEL_ID,
-        message_id=VIDEO_MESSAGE_IDS['lesson2'],
-        protect_content=True
-    )
+    bot.forward_message(chat_id=chat_id, from_chat_id=CHANNEL_ID, message_id=VIDEO_MESSAGE_IDS['lesson2'], protect_content=True)
     
     bot.send_message(chat_id=chat_id, text="Urok 3: Spyna")
-    bot.forward_message(
-        chat_id=chat_id,
-        from_chat_id=CHANNEL_ID,
-        message_id=VIDEO_MESSAGE_IDS['lesson3'],
-        protect_content=True
-    )
+    bot.forward_message(chat_id=chat_id, from_chat_id=CHANNEL_ID, message_id=VIDEO_MESSAGE_IDS['lesson3'], protect_content=True)
     
     bot.send_message(chat_id=chat_id, text="Urok 4: Shyya ta Golova")
-    bot.forward_message(
-        chat_id=chat_id,
-        from_chat_id=CHANNEL_ID,
-        message_id=VIDEO_MESSAGE_IDS['lesson4'],
-        protect_content=True
-    )
+    bot.forward_message(chat_id=chat_id, from_chat_id=CHANNEL_ID, message_id=VIDEO_MESSAGE_IDS['lesson4'], protect_content=True)
     
     bot.send_message(chat_id=chat_id, text="Urok 5: Ruky")
-    bot.forward_message(
-        chat_id=chat_id,
-        from_chat_id=CHANNEL_ID,
-        message_id=VIDEO_MESSAGE_IDS['lesson5'],
-        protect_content=True
-    )
+    bot.forward_message(chat_id=chat_id, from_chat_id=CHANNEL_ID, message_id=VIDEO_MESSAGE_IDS['lesson5'], protect_content=True)
     
     bot.send_message(chat_id=chat_id, text="Finalne video:")
-    bot.forward_message(
-        chat_id=chat_id,
-        from_chat_id=CHANNEL_ID,
-        message_id=VIDEO_MESSAGE_IDS['final'],
-        protect_content=True
-    )
+    bot.forward_message(chat_id=chat_id, from_chat_id=CHANNEL_ID, message_id=VIDEO_MESSAGE_IDS['final'], protect_content=True)
     
-    bot.send_message(
-        chat_id=chat_id,
-        text="Tse vsi uroky kursu! Praktyky regularno!"
-    )
+    bot.send_message(chat_id=chat_id, text="Tse vsi uroky!")
     
-    logger.info(f"Uspishno vidpravleno kurs {chat_id}")
+    logger.info("Course sent to user")
     return True
     
 except Exception as e:
-    logger.error(f"Pomylka: {e}")
+    logger.error("Error sending videos")
     return False
 ```
 
@@ -142,7 +93,7 @@ except Exception as e:
 def payment_webhook():
 try:
 data = request.json
-logger.info(f”Webhook: {data}”)
+logger.info(“Payment webhook received”)
 
 ```
     signature = data.get('merchantSignature', '')
@@ -156,75 +107,53 @@ logger.info(f”Webhook: {data}”)
             success = send_course_videos(chat_id)
             
             if success:
-                response_data = {
-                    'orderReference': order_ref,
-                    'status': 'accept',
-                    'time': data.get('time')
-                }
-                
-                sign_string = f"{order_ref};accept;{data.get('time')}"
-                response_signature = hmac.new(
-                    WAYFORPAY_SECRET_KEY.encode('utf-8'),
-                    sign_string.encode('utf-8'),
-                    hashlib.md5
-                ).hexdigest()
-                
+                response_data = {'orderReference': order_ref, 'status': 'accept', 'time': data.get('time')}
+                sign_string = order_ref + ";accept;" + str(data.get('time'))
+                response_signature = hmac.new(WAYFORPAY_SECRET_KEY.encode('utf-8'), sign_string.encode('utf-8'), hashlib.md5).hexdigest()
                 response_data['signature'] = response_signature
                 return jsonify(response_data), 200
             else:
                 return jsonify({'error': 'Failed'}), 500
                 
-        except (IndexError, ValueError) as e:
-            logger.error(f"Pomylka: {e}")
+        except (IndexError, ValueError):
             return jsonify({'error': 'Invalid order'}), 400
     
     return jsonify({'status': 'ok'}), 200
     
-except Exception as e:
-    logger.error(f"Pomylka: {e}")
-    return jsonify({'error': str(e)}), 500
+except Exception:
+    return jsonify({'error': 'Server error'}), 500
 ```
 
-def start_command(update: Update, context: CallbackContext):
+def start_command(update, context):
 chat_id = update.effective_chat.id
-update.message.reply_text(
-f”Vitayu!\n\nTse bot dlya kursu samomasazhu.\n\nTviy ID: {chat_id}\n\nShchob otrymaty kurs, oplaty na sayti.”
-)
+message_text = “Vitayu!\n\nTse bot dlya kursu samomasazhu.\n\nTviy ID: “ + str(chat_id)
+update.message.reply_text(message_text)
 
-def handle_forwarded(update: Update, context: CallbackContext):
+def handle_forwarded(update, context):
 if update.message.forward_from_chat and update.message.forward_from_chat.id == CHANNEL_ID:
 message_id = update.message.forward_from_message_id
-
-```
-    media_type = "unknown"
-    if update.message.video:
-        media_type = "video"
-    elif update.message.photo:
-        media_type = "photo"
-        
-    update.message.reply_text(
-        f"Message ID: {message_id}\nType: {media_type}"
-    )
-```
+media_type = “unknown”
+if update.message.video:
+media_type = “video”
+elif update.message.photo:
+media_type = “photo”
+reply_text = “Message ID: “ + str(message_id) + “\nType: “ + media_type
+update.message.reply_text(reply_text)
 
 @app.route(’/webhook/telegram’, methods=[‘POST’])
 def telegram_webhook():
 try:
 if updater is None:
 return jsonify({‘error’: ‘Not ready’}), 503
-
-```
-    update = Update.de_json(request.json, bot)
-    updater.dispatcher.process_update(update)
-    return jsonify({'ok': True}), 200
-except Exception as e:
-    logger.error(f"Error: {e}")
-    return jsonify({'error': str(e)}), 500
-```
+update = Update.de_json(request.json, bot)
+updater.dispatcher.process_update(update)
+return jsonify({‘ok’: True}), 200
+except Exception:
+return jsonify({‘error’: ‘Error’}), 500
 
 @app.route(’/’)
 def home():
-return “Bot works!”
+return “Bot works”
 
 @app.route(’/health’)
 def health():
@@ -236,7 +165,7 @@ updater = Updater(token=TELEGRAM_BOT_TOKEN, use_context=True)
 dp = updater.dispatcher
 dp.add_handler(CommandHandler(“start”, start_command))
 dp.add_handler(MessageHandler(Filters.forwarded & (Filters.video | Filters.photo | Filters.document), handle_forwarded))
-logger.info(“Bot initialized!”)
+logger.info(“Bot initialized”)
 
 if **name** == ‘**main**’:
 init_bot()
